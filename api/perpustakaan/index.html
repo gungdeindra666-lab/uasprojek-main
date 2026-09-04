@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Perpustakaan API</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #f4f6f9;
+            color: #333;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+        .card h2 {
+            margin-bottom: 15px;
+            color: #3498db;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 8px;
+        }
+        .form-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        input, select, button {
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        input, select {
+            flex: 1;
+            min-width: 150px;
+        }
+        button {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        button:hover {
+            background-color: #27ae60;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #2c3e50;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+        .badge-keluar { background-color: #e74c3c; }
+        .badge-masuk { background-color: #3498db; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📚 Management Perpustakaan</h1>
+
+    <!-- 1. DATA PENGGUNA -->
+    <div class="card">
+        <h2>Data Pengguna</h2>
+        <form id="formPengguna" class="form-group">
+            <input type="text" id="nama" placeholder="Nama Lengkap" required>
+            <input type="email" id="email" placeholder="Email" required>
+            <button type="submit">Tambah Pengguna</button>
+        </form>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nama</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody id="tabelPengguna">
+                <tr><td colspan="3">Memuat data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 2. DATA TRANSAKSI BUKU -->
+    <div class="card">
+        <h2>Sirkulasi Keluar & Masuk Buku</h2>
+        <form id="formTransaksi" class="form-group">
+            <input type="number" id="id_pengguna" placeholder="ID Pengguna" required>
+            <input type="text" id="judul_buku" placeholder="Judul Buku" required>
+            <select id="jenis_transaksi">
+                <option value="keluar">Keluar (Pinjam)</option>
+                <option value="masuk">Masuk (Kembali)</option>
+            </select>
+            <button type="submit">Catat Transaksi</button>
+        </form>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID Transaksi</th>
+                    <th>Peminjam</th>
+                    <th>Judul Buku</th>
+                    <th>Jenis</th>
+                    <th>Tanggal</th>
+                </tr>
+            </thead>
+            <tbody id="tabelTransaksi">
+                <tr><td colspan="5">Memuat data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'perpustakaan.php';
+
+    // Fetch Data Pengguna
+    async function loadPengguna() {
+        const res = await fetch(`${API_URL}?action=pengguna`);
+        const json = await res.json();
+        const tbody = document.getElementById('tabelPengguna');
+        tbody.innerHTML = '';
+
+        if (json.data && json.data.length > 0) {
+            json.data.forEach(item => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${item.id}</td>
+                        <td>${item.nama}</td>
+                        <td>${item.email}</td>
+                    </tr>`;
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="3">Belum ada data pengguna.</td></tr>';
+        }
+    }
+
+    // Fetch Data Transaksi
+    async function loadTransaksi() {
+        const res = await fetch(`${API_URL}?action=transaksi`);
+        const json = await res.json();
+        const tbody = document.getElementById('tabelTransaksi');
+        tbody.innerHTML = '';
+
+        if (json.data && json.data.length > 0) {
+            json.data.forEach(item => {
+                const badgeClass = item.jenis_transaksi === 'keluar' ? 'badge-keluar' : 'badge-masuk';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${item.id}</td>
+                        <td>${item.peminjam}</td>
+                        <td>${item.judul_buku}</td>
+                        <td><span class="badge ${badgeClass}">${item.jenis_transaksi.toUpperCase()}</span></td>
+                        <td>${item.tanggal}</td>
+                    </tr>`;
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="5">Belum ada data transaksi.</td></tr>';
+        }
+    }
+
+    // Submit Form Pengguna
+    document.getElementById('formPengguna').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const nama = document.getElementById('nama').value;
+        const email = document.getElementById('email').value;
+
+        await fetch(`${API_URL}?action=pengguna`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nama, email })
+        });
+
+        document.getElementById('formPengguna').reset();
+        loadPengguna();
+    });
+
+    // Submit Form Transaksi
+    document.getElementById('formTransaksi').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id_pengguna = document.getElementById('id_pengguna').value;
+        const judul_buku = document.getElementById('judul_buku').value;
+        const jenis_transaksi = document.getElementById('jenis_transaksi').value;
+
+        await fetch(`${API_URL}?action=transaksi`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_pengguna, judul_buku, jenis_transaksi })
+        });
+
+        document.getElementById('formTransaksi').reset();
+        loadTransaksi();
+    });
+
+    // Inisialisasi Data awal
+    loadPengguna();
+    loadTransaksi();
+</script>
+
+</body>
+</html>
